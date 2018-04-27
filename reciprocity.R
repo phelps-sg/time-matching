@@ -17,6 +17,7 @@ library(xtable)
 library(sets)
 library(lme4)
 library(ggplot2)
+library(plyr)
 
 datadir <- "../../data/"
 figsdir <- "../../figs/"
@@ -134,6 +135,8 @@ res_dyad  <- vector("list", ndyad)
 dis_wind  <- vector("list", length(window_ws))
 res_wind  <- matrix(NA, length(window_ws), 2)
 
+group.colours <- c(within.bout= '#0000FF', delayed = '#00FF00')
+percentile.colours <- c('#FF0000', rainbow(10)[4])
 
 
 for (i in 1:nschedules) {
@@ -464,6 +467,27 @@ MakeWindowedScatterPlots <- function(data) {
   }
 }
 
+MakeGroomingByDyadPlot <- function(dataset) {
+  tmp3 <- table(as.factor(dataset$k.1))
+  tmp3 <- tmp3/sum(tmp3)
+
+  whi_dyads <- names(which(tmp3>quantile(tmp3,0.95)))
+  sel_dyads <- as.factor(dataset$k.1)%in%whi_dyads
+  high <- as.numeric(whi_dyads)
+  
+  dyad.percentage <- data.frame(sort(tmp3, decreasing=T))
+  names(dyad.percentage) <- c('Dyad', 'Proportion') 
+  dyad.percentage$percentile <- 
+    unlist(lapply(dyad.percentage$Dyad, 
+            function(x) if (any(high == x)) '1-5' else '6-100'))
+  ggplot(dyad.percentage, aes(x=as.numeric(Dyad), y=Proportion, fill=percentile)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=percentile.colours) + 
+    xlab('Dyad') + ylab('Proportion of total grooming')
+  ggsave(paste0(figsdir, 'grooming-distribution.pdf'))
+  return(dyad.percentage)
+}
+
 MakeScatterPlots <- function(dataset) {
   pdf(paste0(figsdir, 'chimptest5a.pdf'))
   tmp3 <- table(as.factor(dataset$k.1))
@@ -484,15 +508,16 @@ MakeScatterPlots <- function(dataset) {
   plot(dataset$X1,dataset$Y,type="n",xlab=expression(X), ylab="Y",ylim=c(0,ceiling(max(c(dataset$X1,dataset$Y)))))
     abline(out0,col=2)
     abline(out0a,col=3)
-    points(dataset$X1[sel_dyads],dataset$Y[sel_dyads],col=3)
+    points(dataset$X1[sel_dyads],dataset$Y[sel_dyads],col=percentile.colours[2])
     abline(out0b,col=4)
-    points(dataset$X1[!sel_dyads],dataset$Y[!sel_dyads],col=4,pch=4)
-    legend("topright",c("All","Top 5%","Bottom 95%"),col=c(2,3,4),pch=c(NA,1,4),lwd=1)
-
-  par(fig=c(0.15,0.65,0.6,1),new=T)
-  barplot(sort(tmp3,decreasing=T),xaxt="n", ylab="% of Grooming",width=1,#xlab="Dyad ID"
-          col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
-          space=0,border=NA)
+    points(dataset$X1[!sel_dyads],dataset$Y[!sel_dyads],col=percentile.colours[1],pch=4)
+    legend("topright",c("All","Top 5%","Bottom 95%"),col=c(1,percentile.colours[1],percentile.colours[2]),pch=c(NA,1,4),lwd=1)
+ 
+  #par(oma=c(0,1,1,0), mar=c(4,0,0,0), fig=c(0.15,0.55,0.6,1),new=T)
+#   barplot(sort(tmp3*100,decreasing=T),xaxt="n", yaxs="i", ylab="% of total grooming duration",width=1,xlab="Dyad",
+#           col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
+#           space=0,border=NA)
+#   legend("topright",c("Top 5%","Bottom 95%"),col=c(3,4),,lwd=10)
 
   par(fig=c(0,1,0,1),new=F)
   ### Selected Dyads
@@ -694,6 +719,26 @@ MakeDeltaVersusRho <- function() {
   with(dataset[dataset$reciprocity == 0,], points(abs(X2), reciprocity, col='red', pch=4))
 }
 
+
+MakeCountBarPlot <- function(dataset) {
+
+  DF <- function(dataset, condition) {
+    chimp <- unlist(dyads[dataset$dyad, 1])
+    counts <- count(chimp)
+    n <- nrow(counts)
+    data.frame(x=counts$x, y=counts$freq, condition=rep(condition, n))
+  }
+  
+  df <- rbind(DF(dataset[dataset$X2 < 0,], 'within.bout'), DF(dataset[dataset$X2 >= 0,], 'delayed'))
+  
+  ggplot(df, aes(x=x, y=y, fill=condition)) + 
+    geom_bar(stat='identity', position=position_dodge()) +
+    scale_fill_manual(values=group.colours) +
+    xlab('Chimpanzee') + ylab('n')
+  ggsave(paste0(figsdir, 'counts-bar-plot.pdf'))
+}
+
+
 MakePDFs <- function(threshold = 0) {
   immediate <<- dataset[dataset$X2 < threshold,]
   delayed <<- dataset[dataset$X2 >= threshold,]
@@ -724,14 +769,15 @@ MakePDFs <- function(threshold = 0) {
   abline(a = 0.0, b = 0.)
   dev.off()
   
-  pdf('../../figs/delay-histogram.pdf')
-  with(dataset, qplot(
-    X2 / (60),
-    colour = I('red'),
-    main = '',
-    xlab = expression(Delta)
-  ))
-  dev.off()
+  dataset$group <- rep(NaN, nrow(dataset))
+  dataset[dataset$X2 < 0,]$group = 'within.bout'
+  dataset[dataset$X2 >= 0,]$group = 'delayed'
+  ggplot(dataset, aes(x=X2/60, group=group, fill=group)) + 
+    geom_histogram(closed='left', breaks=seq(-44, 266, by=44/10)) +
+    scale_fill_manual(values=group.colours) +
+    xlab(expression('Delay (' ~ Delta ~ ') in minutes'))
+  ggsave(paste0(figsdir, 'delay-histogram.pdf'))
   
+  MakeCountBarPlot(dataset)
   MakeScatterPlots(dataset)
 }
