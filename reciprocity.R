@@ -136,7 +136,8 @@ dis_wind  <- vector("list", length(window_ws))
 res_wind  <- matrix(NA, length(window_ws), 2)
 
 group.colours <- c(within.bout= '#0000FF', delayed = '#00FF00')
-percentile.colours <- c('#FF0000', rainbow(10)[4])
+percentile.colours <- c('#FF0000', '#001889')
+window.size.colours <- c( "#7C0607", "#C18989", "#9394C0", "#1F28A2")
 
 
 for (i in 1:nschedules) {
@@ -308,7 +309,6 @@ dataset$dyad <-
     DyadNumber(x[[1]], x[[2]])
   })
 dataset$comovement <- sapply(dataset$dyad, Comovement)
-#dataset$reciprocity = dataset$Y / (dataset$X1 + dataset$Y)
 dataset$reciprocity = abs(dataset$Y - dataset$X1) / (dataset$X1 + dataset$Y)
 
 
@@ -416,7 +416,8 @@ MakeBoxPlots <- function(data,
   
 }
 
-MakeWindowedScatterPlots <- function(data) {
+
+MakeWindowedScatterPlots <- function(dataset) {
   window.sizes <- c(20, 40, 60, 240) * 60
   
   windowed <-
@@ -426,46 +427,68 @@ MakeWindowedScatterPlots <- function(data) {
                CumulativeReciprocityByDelay(dataset, ws),
              window.sizes
            ))
+  windowed$logX1 = log(windowed$X1 / 60)
+  windowed$logY = log(windowed$Y / 60)
   
   treatments <- c('all', 'immediate', 'delayed')
-  treatment.color <- c('red', 'blue', 'green')
+
   treatment.label <-
     c(expression(all), expression(Delta < 0), expression(Delta >= 0))
   
-  for (i in 1:length(treatments)) {
+  sapply(1:length(treatments), function(i) {
     with(windowed[windowed$treatment == treatments[i], ], {
-      pdf(
-        file = sprintf(
-          '../../figs/windowed-scatter-plot-%s.pdf',
-          treatments[i]
-        ),
-        width = 8,
-        height = 8
-      )
-      par(mfrow = c(1, 1))
-      window.size.factor <- factor(ws, labels = 1:4)
-      plot(
-        log(X1 / 60),
-        log(Y / 60),
-        ylim = c(0, log(4000 / 60)),
-        xlim = c(0, log(4000 / 60)),
-        xlab = expression(log(X)),
-        ylab = expression(log(Y)),
-        col = treatment.color[i],
-        main = treatment.label[i],
-        pch = as.integer(window.size.factor)
-      )
-      legend(
-        'topleft',
-        legend = paste0(window.sizes / 60, 'm'),
-        pch = 1:4,
-        col = treatment.color[i]
-      )
-      abline(0., 1.)
-      dev.off()
+    
+#       pdf(
+#         file = sprintf(
+#           '../../figs/windowed-scatter-plot-%s.pdf',
+#           treatments[i]
+#         ),
+#         width = 8,
+#         height = 8
+#       )
+      
+#       par(mfrow = c(1, 1))
+      
+      window.size.factor <- factor(window.sizes, labels = 1:4)
+      
+#       plot(
+#         logX1,
+#         logY,
+#         ylim = c(0, log(4000 / 60)),
+#         xlim = c(0, log(4000 / 60)),
+#         xlab = expression(sum(log(X))),
+#         ylab = expression(sum(log(Y))),
+#         col = window.size.colours,
+#         #main = treatment.label[i],
+#         pch = as.integer(window.size.factor)
+#       )
+       
+      r.squareds <- sapply(1:length(window.sizes), function(ws.index) {
+        lm.windowed <- lm(logY ~ logX1, 
+          data=windowed[windowed$ws == window.sizes[ws.index] & windowed$treatment == treatments[i],])
+#         abline(lm.windowed$coefficients, lty=ws.index+1, col=window.size.colours[ws.index])
+        print(summary(lm.windowed))
+        #summary(lm.windowed)$adj.r.squared
+        lm.windowed$coefficients[2]
+      })
+      
+#       legend(
+#         'topleft',
+#         legend = c(paste0(window.sizes / 60, 'm (r-squared = ', round(r.squareds, digits=2), ')'), 'Y=X'),
+#         pch = c(1:4, NA),
+#         lty = c(2:5, 1),
+#         col = c(window.size.colours, 1)
+#       )
+      
+#       abline(0, 1., lty=1)
+     
+#       dev.off()
+      
+      r.squareds
+      })
     })
-  }
 }
+
 
 MakeGroomingByDyadPlot <- function(dataset) {
   tmp3 <- table(as.factor(dataset$k.1))
@@ -488,6 +511,7 @@ MakeGroomingByDyadPlot <- function(dataset) {
   return(dyad.percentage)
 }
 
+
 MakeScatterPlots <- function(dataset) {
   pdf(paste0(figsdir, 'chimptest5a.pdf'))
   tmp3 <- table(as.factor(dataset$k.1))
@@ -502,16 +526,35 @@ MakeScatterPlots <- function(dataset) {
   summary(out0a)
   out0b <- lm(Y~X1,data=dataset[!sel_dyads,])
   summary(out0b)
-
+  
+  MakeLegend <- function() {
+    legend("topleft", c("All","Top 5%","Bottom 95%", "Y=X"),
+            col=c(1, percentile.colours[1], percentile.colours[2], 1), 
+            pch=c(NA, 1, 4, NA), 
+            lty=c(1, 1, 1, 3),
+            lwd=1)
+  }
+ 
   par(fig=c(0,1,0,1),new=F)
   par(mar=c(4.25,4.25,1,1))
-  plot(dataset$X1,dataset$Y,type="n",xlab=expression(X), ylab="Y",ylim=c(0,ceiling(max(c(dataset$X1,dataset$Y)))))
-    abline(out0,col=2)
-    abline(out0a,col=3)
-    points(dataset$X1[sel_dyads],dataset$Y[sel_dyads],col=percentile.colours[2])
-    abline(out0b,col=4)
-    points(dataset$X1[!sel_dyads],dataset$Y[!sel_dyads],col=percentile.colours[1],pch=4)
-    legend("topright",c("All","Top 5%","Bottom 95%"),col=c(1,percentile.colours[1],percentile.colours[2]),pch=c(NA,1,4),lwd=1)
+  
+  plot(dataset$X1, dataset$Y, type="n",
+        xlab=expression(X), ylab="Y",
+        asp=1,
+        ylim=c(0, ceiling(max(c(dataset$X1, dataset$Y)))))
+  
+  abline(out0, col=1)
+  abline(out0a, col=percentile.colours[1])
+  
+  points(dataset$X1[sel_dyads], dataset$Y[sel_dyads], col=percentile.colours[1])
+  
+  abline(out0b, col=percentile.colours[2])
+  
+  points(dataset$X1[!sel_dyads], dataset$Y[!sel_dyads], col=percentile.colours[2], pch=4)
+  
+  abline(0, 1, col=1, lty=3)
+  
+  MakeLegend()
  
   #par(oma=c(0,1,1,0), mar=c(4,0,0,0), fig=c(0.15,0.55,0.6,1),new=T)
 #   barplot(sort(tmp3*100,decreasing=T),xaxt="n", yaxs="i", ylab="% of total grooming duration",width=1,xlab="Dyad",
@@ -539,20 +582,26 @@ MakeScatterPlots <- function(dataset) {
   out1b <- lm(Y~X1,data=Z1[!sel_dyads,])
   summary(out1b)
 
+  maxdur <- ceiling(max(c(Z1$X1,Z1$Y)))
   par(fig=c(0,1,0,1),new=F)
   par(mar=c(4.25,4.25,1,1))
-  plot(Z1$X1,Z1$Y,type="n",xlab=expression(X), ylab="Y",ylim=c(0,ceiling(max(c(Z1$X1,Z1$Y)))))
-  abline(out1,col=2)
-  abline(out1a,col=3)
-  points(Z1$X1[sel_dyads],Z1$Y[sel_dyads],col=3)
-  abline(out1b,col=4)
-  points(Z1$X1[!sel_dyads],Z1$Y[!sel_dyads],col=4,pch=4)
-  legend("topright",c("All","Top 5%","Bottom 95%"),col=c(2,3,4),pch=c(NA,1,4),lwd=1)
+  plot(Z1$X1, Z1$Y, type="n", 
+        xlab=expression(X), ylab="Y", asp=1,
+        ylim=c(0, maxdur), xlim=c(0, maxdur) ) 
+  abline(out1,col=1)
+  abline(out1a,col=percentile.colours[1])
+  points(Z1$X1[sel_dyads], Z1$Y[sel_dyads], col=percentile.colours[1])
+  abline(out1b,col=percentile.colours[2])
+  points(Z1$X1[!sel_dyads], Z1$Y[!sel_dyads], col=percentile.colours[2], pch=4)
+  abline(0, 1, col=1, lty=3)
+  
+  MakeLegend()
+  #legend("topright",c("All","Top 5%","Bottom 95%"),col=c(2,3,4),pch=c(NA,1,4),lwd=1)
 
-  par(fig=c(0.15,0.65,0.6,1),new=T)
-  barplot(sort(tmp3,decreasing=T),xaxt="n", ylab="% of Grooming",width=1,#xlab="Dyad ID"
-          col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
-          space=0,border=NA)
+#   par(fig=c(0.15,0.65,0.6,1),new=T)
+#   barplot(sort(tmp3,decreasing=T),xaxt="n", ylab="% of Grooming",width=1,#xlab="Dyad ID"
+#           col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
+#           space=0,border=NA)
 
   ### 
 
@@ -573,28 +622,40 @@ MakeScatterPlots <- function(dataset) {
 
   par(fig=c(0,1,0,1),new=F)
   par(mar=c(4.25,4.25,1,1))
-  plot(Z2$X1,Z2$Y,type="n",xlab=expression(X), ylab="Y",ylim=c(0,ceiling(max(c(Z2$X1,Z2$Y)))))
-  abline(out2,col=2)
-  abline(out2a,col=3)
-  points(Z2$X1[sel_dyads],Z2$Y[sel_dyads],col=3)
-  abline(out2b,col=4)
-  points(Z2$X1[!sel_dyads],Z2$Y[!sel_dyads],col=4,pch=4)
-  legend("topright",c("All","Top 5%","Bottom 95%"),col=c(2,3,4),pch=c(NA,1,4),lwd=1)
+  
+  plot(Z2$X1,Z2$Y, type="n",
+        xlab=expression(X), ylab="Y", asp=1,
+        ylim=c(0, ceiling(max(c(Z2$X1,Z2$Y)))))
+  
+  abline(out2,col=1)
+  abline(out2a,col=percentile.colours[1])
+  
+  points(Z2$X1[sel_dyads], Z2$Y[sel_dyads], col=percentile.colours[1])
+  
+  abline(out2b,col=percentile.colours[2])
+  
+  points(Z2$X1[!sel_dyads], Z2$Y[!sel_dyads], col=percentile.colours[2], pch=4)
+  abline(0, 1, col=1, lty=3)
+  
+  MakeLegend()
+#   legend("topright",c("All","Top 5%","Bottom 95%"),col=c(2,3,4),pch=c(NA,1,4),lwd=1)
 
-  par(fig=c(0.15,0.65,0.6,1),new=T)
-  barplot(sort(tmp3,decreasing=T),xaxt="n", ylab="% of Grooming",width=1,#xlab="Dyad ID"
-          col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
-          space=0,border=NA)
+  par(fig=c(0.15,0.65,0.6,1), new=T)
+#   barplot(sort(tmp3,decreasing=T),xaxt="n", ylab="% of Grooming",width=1,#xlab="Dyad ID"
+#           col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
+#           space=0,border=NA)
 
-  par(fig=c(0,1,0,1),new=F)
-  plot(dataset$X1,dataset$Y,xlab=expression(X), ylab="Y",type="n",
-      ylim=c(0,ceiling(max(c(dataset$X1,dataset$Y)))))
-    abline(out0,col=2)
-    abline(out1,col=3)
-    abline(out2,col=4)
-    points(dataset$X1[idx1],dataset$Y[idx1],col=3)
-    points(dataset$X1[idx2],dataset$Y[idx2],col=4,pch=4)
-    legend("topright",c("All",expression(Delta>=0),expression(Delta<0)),col=c(2,3,4),lwd=1,pch=c(NA,1,4))
+  par(fig=c(0,1,0,1), new=F)
+  plot(dataset$X1, dataset$Y, xlab=expression(X), ylab="Y",type="n", asp=1,
+      ylim=c(0, ceiling(max(c(dataset$X1, dataset$Y)))))
+  abline(out0, col=1)
+  abline(out1, col=3)
+  abline(out2, col=4)
+  abline(0, 1, col=1, lty=3)
+  points(dataset$X1[idx1], dataset$Y[idx1], col=3)
+  points(dataset$X1[idx2], dataset$Y[idx2], col=4, pch=4)
+  legend("topleft",c("All",expression(Delta >= 0), expression(Delta < 0), "Y=X"),
+            col=c(1, 3, 4, 1), lwd=1, pch=c(NA, 1, 4, NA), lty=c(1, 1, 1, 3))
   # par(fig=c(0,0.5,0.5,1),new=T)
   # pie(c(sum(idx1),sum(idx2)),col=3:4,labels="",radius=0.5)
 
@@ -714,6 +775,7 @@ MakeScatterPlots <- function(dataset) {
 
 }
 
+
 MakeDeltaVersusRho <- function() {
   matplot(abs(dataset$X2), dataset$reciprocity, pch=4, xlab=expression('Absolute delay (' ~ abs(Delta) ~ ')'), ylab=expression('Reciprocity (' ~ rho ~ ')'))
   with(dataset[dataset$reciprocity == 0,], points(abs(X2), reciprocity, col='red', pch=4))
@@ -736,6 +798,110 @@ MakeCountBarPlot <- function(dataset) {
     scale_fill_manual(values=group.colours) +
     xlab('Chimpanzee') + ylab('n')
   ggsave(paste0(figsdir, 'counts-bar-plot.pdf'))
+}
+
+
+NullModel <- function(dataset) {
+
+  durations.by.chimp <- with(dataset, aggregate(dur.1 ~ X1.1, FUN=mean))
+  
+  DurationForChimp <- function(i) durations.by.chimp[durations.by.chimp$X1.1 == i,]$dur.1
+  
+  dur.1 <- sapply(dataset$X1.1, DurationForChimp)
+  dur.2 <- sapply(dataset$X1.2, DurationForChimp)
+  
+  RandomDuration <- function(mean_duration) runif(1, max=2*mean_duration)
+  
+  null.model <- dataset
+  null.model$X1 <- sapply(dur.1, RandomDuration)
+  null.model$Y <-  sapply(dur.2, RandomDuration)
+  
+  null.model
+}
+
+
+MakeNullModelScatterPlot1 <- function(dataset) {
+
+  pdf(paste0(figsdir, 'null-model-scatter-plot.pdf'), width=9, height=9)
+   
+  durations.by.chimp <- with(dataset, aggregate(dur.1 ~ X1.1, FUN=mean))
+ 
+  durations.by.dyad <- data.frame(dyad=dataset$dyad)
+  durations.by.dyad$A <- dyads[dataset$dyad,1]
+  durations.by.dyad$B <- dyads[dataset$dyad,2]
+  
+  DurationForChimp <- function(i) durations.by.chimp[durations.by.chimp$X1.1 == i,]$dur.1
+  
+  durations.by.dyad$dur.1 <- 
+    as.numeric(sapply(durations.by.dyad$A, DurationForChimp))
+        
+  durations.by.dyad$dur.2 <- 
+    as.numeric(sapply(durations.by.dyad$B, DurationForChimp))
+ 
+  Aggregated <- function(x, y, ws) (sum((runif(ws, max=2*x)) + sum(runif(ws, max=2*y))))/(ws*2000)
+  
+  rsum <- 
+    function(x, y, ws) c(ws=ws, A=Aggregated(x, y, ws), B=Aggregated(x, y, ws))
+    
+  window.sizes <- c(20, 40, 60, 240)
+  
+  plot(xlim=c(0, 4.5), ylim=c(0, 4.5), 
+	xlab=expression(log(sum(X))), 
+	ylab=expression(log(sum(Y))), 
+	x=c(), y=c())
+	
+  r.squared <- 
+    sapply(1:length(window.sizes), 
+      function(i) {
+        null.model <-
+          adply(durations.by.dyad[,c('dur.1', 'dur.2')], 1, 
+            function(x) rsum(x$dur.1, x$dur.2, window.sizes[i]))
+                
+          with(null.model, {
+            points(log(A), log(B), lty=i+1, pch=i, col=window.size.colours[i])
+            null.lm <- lm(log(B) ~ log(A))
+            abline(null.lm$coefficients, lty=1, col=window.size.colours[i])
+            summary(null.lm)$adj.r.squared
+          })
+  })
+  
+  legend('topleft', legend=c(paste0(window.sizes, ' (r-squared = ', round(r.squared, digits=2), ')'), 'Y=X'), lty=c(2:5, 1), col=window.size.colours, pch=c(1:4,NA))
+  
+  abline(0, 1, lty=1, col=1)
+  dev.off()
+  r.squared
+}
+
+
+MakeNullModelScatterPlot <- function(dataset) {
+  pdf(paste0(figsdir, 'null-model-scatter-plot.pdf'), width=9, height=9)
+  durations.by.dyad <-with(dataset, aggregate(dur.1 ~ dyad, FUN=sum))
+  rsum <- 
+    function(m, ws) c(ws, sum(runif(ws, max=m))/ws, sum(runif(ws, max=m))/ws)
+  window.sizes <- c(20, 40, 60, 240)
+  plot(xlim=c(0, 10), ylim=c(0, 10), 
+	xlab=expression(log(sum(X))), 
+	ylab=expression(log(sum(Y))), 
+	x=c(), y=c())
+  r.squared <- 
+    sapply(1:length(window.sizes), function(i) {
+      null.model <- 
+        as.data.frame(t(sapply(durations.by.dyad$dur.1, 
+                function(x) rsum(x, window.sizes[i]))))
+      names(null.model) <- c('ws', 'X', 'Y')
+      with(null.model, {
+        points(log(X), log(Y), lty=i+1, pch=i, col=window.size.colours[i])
+        null.lm <- lm(log(Y) ~ log(X))
+        abline(null.lm$coefficients, lty=1, col=window.size.colours[i])
+        print(summary(null.lm))
+        summary(null.lm)$adj.r.squared
+      })
+    })
+  legend('topleft', legend=c(paste0(window.sizes, ' (r-squared = ', round(r.squared, digits=2), ')'), 'Y=X'), lty=c(2:5, 1), col=window.size.colours, pch=c(1:4,NA))
+  
+  abline(0, 1, lty=1, col=1)
+  dev.off()
+  r.squared
 }
 
 
@@ -779,5 +945,6 @@ MakePDFs <- function(threshold = 0) {
   ggsave(paste0(figsdir, 'delay-histogram.pdf'))
   
   MakeCountBarPlot(dataset)
+  MakeGroomingByDyadPlot(dataset)
   MakeScatterPlots(dataset)
 }
