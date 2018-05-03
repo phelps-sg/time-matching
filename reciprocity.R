@@ -494,12 +494,12 @@ MakeWindowedScatterPlots <- function(dataset, fname='windowed-scatter-plots') {
         lm.summary <- summary(lm.windowed)
         print(lm.summary)
         data.frame(coef.1 =
-        lm.windowed$coefficients[1], coef.2 = lm.windowed$coefficients[2], adj.r.squared = lm.summary$adj.r.squared, treatment=treatments[i], ws=window.sizes[ws.index])
-#         c(lm.windowed$coefficients[1], lm.windowed$coefficients[2], adj.r.squared = lm.summary$adj.r.squared)
+         lm.windowed$coefficients[1], coef.2 = lm.windowed$coefficients[2], adj.r.squared = lm.summary$adj.r.squared, treatment=treatments[i], ws=window.sizes[ws.index])
+          c(lm.windowed$coefficients[1], lm.windowed$coefficients[2], adj.r.squared = lm.summary$adj.r.squared)
       })
           
       if (!is.null(fname)) {
-        r.squareds <- regression.results['adj.r.squared', ]
+        r.squareds <- regression.results$adj.r.squared
         legend(
             'topleft',
             legend = c(paste0(window.sizes / 60, 'm (r-squared = ',
@@ -832,20 +832,28 @@ MakeCountBarPlot <- function(dataset) {
 
 
 NullModel <- function(dataset) {
-
-  mean.duration.by.chimp <- with(dataset, aggregate(dur.1 ~ X1.1, FUN=mean))
+# 
+#   mean.duration.by.chimp <- with(dataset, aggregate(dur.1 ~ X1.1, FUN=mean))
+#   
+#   MeanDurationForChimp <- function(i) 
+#     mean.duration.by.chimp[mean.duration.by.chimp$X1.1 == i,]$dur.1
+#   
+#   mean.dur.1 <- sapply(dataset$X1.1, MeanDurationForChimp)
+#   mean.dur.2 <- sapply(dataset$X1.2, MeanDurationForChimp)
   
-  MeanDurationForChimp <- function(i) 
-    mean.duration.by.chimp[mean.duration.by.chimp$X1.1 == i,]$dur.1
-  
-  mean.dur.1 <- sapply(dataset$X1.1, MeanDurationForChimp)
-  mean.dur.2 <- sapply(dataset$X1.2, MeanDurationForChimp)
-  
-  RandomDuration <- function(mean_duration) runif(1, min=0, max=2*mean_duration)
+  #RandomDuration <- function(mean_duration) runif(1, min=0, max=2*mean_duration)
+  RandomDuration <- function(chimp) {
+    durations <- dataset[dataset$X1.1 == chimp, 'dur.1']
+    if (length(durations) > 0) {
+      return(sample(durations, size=1, replace=T))
+    } else {
+      return(NA)
+    }
+  }
   
   null.model <- dataset
-  null.model$X1 <- sapply(mean.dur.1, RandomDuration)
-  null.model$Y <-  sapply(mean.dur.2, RandomDuration)
+  null.model$X1 <- sapply(dataset$X1.1, RandomDuration)
+  null.model$Y <-  sapply(dataset$X1.2, RandomDuration)
   
   return(null.model)
 }
@@ -854,18 +862,18 @@ NullModel <- function(dataset) {
 BootstrapNullModel <- function(dataset, n=100) {
   results <- c()
   for(i in 1:n) {
-    #results <- rbind(results, MakeWindowedScatterPlots(NullModel(dataset), fname=NULL))
     results <- 
-      rbind(results, aggregate(reciprocity ~ ws + treatment,
-        WindowData(NullModel(dataset)), FUN=median))
+      rbind(results, 
+              aggregate(reciprocity ~ ws + treatment,
+                WindowData(NullModel(dataset)), FUN=median))
   }
   return(results)
 }
 
 
-NullModelConfIntervals <- function(bootstrap.results, var) {
+NullModelCriticalValues <- function(bootstrap.results, var, p=0.05) {
 
-  ConfIntervals <- function(probability) {
+  CriticalValues <- function(probability) {
      df <- aggregate(as.formula(paste(var,'~ ws + treatment')), 
             bootstrap.results, 
             FUN=function(x) quantile(x, p=probability))
@@ -873,8 +881,8 @@ NullModelConfIntervals <- function(bootstrap.results, var) {
      df
   }
   
-  lower <- ConfIntervals(0.025)
-  upper <- ConfIntervals(0.975)
+  lower <- CriticalValues(p/2.)
+  upper <- CriticalValues(1. - (p/2.))
   
   result <- cbind(lower[,1:2], lower[,3], upper[,3])
   names(result)[3] <- paste0('lower.', var)
