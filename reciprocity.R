@@ -417,9 +417,8 @@ MakeBoxPlots <- function(data,
 }
 
 
-MakeWindowedScatterPlots <- function(dataset) {
-  window.sizes <- c(20, 40, 60, 240) * 60
-  
+WindowData <- function(dataset, window.sizes=c(20, 40, 60, 240) * 60) {
+ 
   windowed <-
     Reduce(rbind,
            Map(
@@ -427,10 +426,19 @@ MakeWindowedScatterPlots <- function(dataset) {
                CumulativeReciprocityByDelay(dataset, ws),
              window.sizes
            ))
+           
   windowed$logX1 = log(windowed$X1 / 60)
   windowed$logY = log(windowed$Y / 60)
   
+  return(windowed)
+}
+
+
+MakeWindowedScatterPlots <- function(dataset) {
+
+  window.sizes <- c(20, 40, 60, 240) * 60
   treatments <- c('all', 'immediate', 'delayed')
+  windowed <- WindowData(dataset, window.sizes)
 
   treatment.label <-
     c(expression(all), expression(Delta < 0), expression(Delta >= 0))
@@ -803,20 +811,21 @@ MakeCountBarPlot <- function(dataset) {
 
 NullModel <- function(dataset) {
 
-  durations.by.chimp <- with(dataset, aggregate(dur.1 ~ X1.1, FUN=mean))
+  mean.duration.by.chimp <- with(dataset, aggregate(dur.1 ~ X1.1, FUN=mean))
   
-  DurationForChimp <- function(i) durations.by.chimp[durations.by.chimp$X1.1 == i,]$dur.1
+  MeanDurationForChimp <- function(i) 
+    mean.duration.by.chimp[mean.duration.by.chimp$X1.1 == i,]$dur.1
   
-  dur.1 <- sapply(dataset$X1.1, DurationForChimp)
-  dur.2 <- sapply(dataset$X1.2, DurationForChimp)
+  mean.dur.1 <- sapply(dataset$X1.1, MeanDurationForChimp)
+  mean.dur.2 <- sapply(dataset$X1.2, MeanDurationForChimp)
   
-  RandomDuration <- function(mean_duration) runif(1, max=2*mean_duration)
+  RandomDuration <- function(mean_duration) runif(1, min=0, max=2*mean_duration)
   
   null.model <- dataset
-  null.model$X1 <- sapply(dur.1, RandomDuration)
-  null.model$Y <-  sapply(dur.2, RandomDuration)
+  null.model$X1 <- sapply(mean.dur.1, RandomDuration)
+  null.model$Y <-  sapply(mean.dur.2, RandomDuration)
   
-  null.model
+  return(null.model)
 }
 
 
