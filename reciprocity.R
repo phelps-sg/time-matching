@@ -309,7 +309,14 @@ dataset$dyad <-
     DyadNumber(x[[1]], x[[2]])
   })
 dataset$comovement <- sapply(dataset$dyad, Comovement)
-dataset$reciprocity = abs(dataset$Y - dataset$X1) / (dataset$X1 + dataset$Y)
+
+Reciprocity <- function(dataset) {
+  with(dataset, {
+    abs(Y - X1) / (X1 + Y)
+  })
+}
+
+dataset$reciprocity = Reciprocity(dataset)
 
 
 CumulativeReciprocity <- function(dataset, ws, treatment = 'all') {
@@ -429,12 +436,13 @@ WindowData <- function(dataset, window.sizes=c(20, 40, 60, 240) * 60) {
            
   windowed$logX1 = log(windowed$X1 / 60)
   windowed$logY = log(windowed$Y / 60)
+  windowed$reciprocity = Reciprocity(windowed)
   
   return(windowed)
 }
 
 
-MakeWindowedScatterPlots <- function(dataset) {
+MakeWindowedScatterPlots <- function(dataset, fname='windowed-scatter-plots') {
 
   window.sizes <- c(20, 40, 60, 240) * 60
   treatments <- c('all', 'immediate', 'delayed')
@@ -443,58 +451,72 @@ MakeWindowedScatterPlots <- function(dataset) {
   treatment.label <-
     c(expression(all), expression(Delta < 0), expression(Delta >= 0))
   
-  sapply(1:length(treatments), function(i) {
+  adply(1:length(treatments), 1, function(i) {
     with(windowed[windowed$treatment == treatments[i], ], {
-    
-#       pdf(
-#         file = sprintf(
-#           '../../figs/windowed-scatter-plot-%s.pdf',
-#           treatments[i]
-#         ),
-#         width = 8,
-#         height = 8
-#       )
-      
-#       par(mfrow = c(1, 1))
-      
+        
+      if (!is.null(fname)) {
+        pdf(
+          file = 
+            sprintf('%s%s-%s.pdf', 
+                      figsdir, fname, treatments[i]),
+          width = 8,
+          height = 8
+        )
+        
+        par(mfrow = c(1, 1))
+      }
+          
       window.size.factor <- factor(window.sizes, labels = 1:4)
-      
-#       plot(
-#         logX1,
-#         logY,
-#         ylim = c(0, log(4000 / 60)),
-#         xlim = c(0, log(4000 / 60)),
-#         xlab = expression(sum(log(X))),
-#         ylab = expression(sum(log(Y))),
-#         col = window.size.colours,
-#         #main = treatment.label[i],
-#         pch = as.integer(window.size.factor)
-#       )
-       
-      r.squareds <- sapply(1:length(window.sizes), function(ws.index) {
+          
+      if (!is.null(fname)) {
+        plot(
+          logX1,
+          logY,
+          ylim = c(0, log(4000 / 60)),
+          xlim = c(0, log(4000 / 60)),
+          xlab = expression(sum(log(X))),
+          ylab = expression(sum(log(Y))),
+          col = window.size.colours,
+          #main = treatment.label[i],
+          pch = as.integer(window.size.factor)
+        )
+      }
+          
+      regression.results <- adply(1:length(window.sizes), 1, function(ws.index) {
         lm.windowed <- lm(logY ~ logX1, 
-          data=windowed[windowed$ws == window.sizes[ws.index] & windowed$treatment == treatments[i],])
-#         abline(lm.windowed$coefficients, lty=ws.index+1, col=window.size.colours[ws.index])
-        print(summary(lm.windowed))
-        #summary(lm.windowed)$adj.r.squared
-        lm.windowed$coefficients[2]
+                              data=windowed[windowed$ws == window.sizes[ws.index] &
+                                windowed$treatment == treatments[i],])
+              
+        if (!is.null(fname)) {
+          abline(lm.windowed$coefficients, 
+                    lty=ws.index+1, col=window.size.colours[ws.index]) 
+        }
+        lm.summary <- summary(lm.windowed)
+        print(lm.summary)
+        data.frame(coef.1 =
+        lm.windowed$coefficients[1], coef.2 = lm.windowed$coefficients[2], adj.r.squared = lm.summary$adj.r.squared, treatment=treatments[i], ws=window.sizes[ws.index])
+#         c(lm.windowed$coefficients[1], lm.windowed$coefficients[2], adj.r.squared = lm.summary$adj.r.squared)
       })
-      
-#       legend(
-#         'topleft',
-#         legend = c(paste0(window.sizes / 60, 'm (r-squared = ', round(r.squareds, digits=2), ')'), 'Y=X'),
-#         pch = c(1:4, NA),
-#         lty = c(2:5, 1),
-#         col = c(window.size.colours, 1)
-#       )
-      
-#       abline(0, 1., lty=1)
-     
-#       dev.off()
-      
-      r.squareds
-      })
+          
+      if (!is.null(fname)) {
+        r.squareds <- regression.results['adj.r.squared', ]
+        legend(
+            'topleft',
+            legend = c(paste0(window.sizes / 60, 'm (r-squared = ',
+              round(r.squareds, digits=2), ')'), 'Y=X'),
+            pch = c(1:4, NA),
+            lty = c(2:5, 1),
+            col = c(window.size.colours, 1)
+        )
+          
+        abline(0, 1., lty=1)
+        
+        dev.off()
+      }
+          
+      regression.results
     })
+  })
 }
 
 
@@ -829,6 +851,39 @@ NullModel <- function(dataset) {
 }
 
 
+BootstrapNullModel <- function(dataset, n=100) {
+  results <- c()
+  for(i in 1:n) {
+    #results <- rbind(results, MakeWindowedScatterPlots(NullModel(dataset), fname=NULL))
+    results <- 
+      rbind(results, aggregate(reciprocity ~ ws + treatment,
+        WindowData(NullModel(dataset)), FUN=median))
+  }
+  return(results)
+}
+
+
+NullModelConfIntervals <- function(bootstrap.results, var) {
+
+  ConfIntervals <- function(probability) {
+     df <- aggregate(as.formula(paste(var,'~ ws + treatment')), 
+            bootstrap.results, 
+            FUN=function(x) quantile(x, p=probability))
+     names(df)[3] <- sprintf('%s.%f', var, probability)
+     df
+  }
+  
+  lower <- ConfIntervals(0.025)
+  upper <- ConfIntervals(0.975)
+  
+  result <- cbind(lower[,1:2], lower[,3], upper[,3])
+  names(result)[3] <- paste0('lower.', var)
+  names(result)[4] <- paste0('upper.', var)
+  
+  return(result)
+}
+
+
 MakePDFs <- function(threshold = 0) {
   immediate <<- dataset[dataset$X2 < threshold,]
   delayed <<- dataset[dataset$X2 >= threshold,]
@@ -839,7 +894,7 @@ MakePDFs <- function(threshold = 0) {
   immediate$treatment <<- 'immediate'
   delayed$treatment <<- 'delayed'
   
-  pdf('../../figs/reciprocity-by-treatment.pdf')
+  pdf(paste0(figsdir, 'reciprocity-by-treatment.pdf'))
   with(
     rbind(immediate, delayed),
     boxplot(
@@ -871,4 +926,5 @@ MakePDFs <- function(threshold = 0) {
   MakeCountBarPlot(dataset)
   MakeGroomingByDyadPlot(dataset)
   MakeScatterPlots(dataset)
+  MakeWindowedScatterPlots(dataset)
 }
