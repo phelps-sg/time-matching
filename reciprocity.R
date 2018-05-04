@@ -352,20 +352,6 @@ CumulativeReciprocityByDelay <- function(dataset, ws) {
   ))
 }
 
-# res <- ReciprocityByDelay(dataset, 2400)
-# with(res[res$treatment == 'all',], plot(X1, Y))
-# with(res[res$treatment == 'immediate',], plot(X1, Y))
-#
-# # ws <- 1:60 * 10
-# #
-# # WindowedPlot <- function(dataset, var) {
-# #   plot(ws, unlist(Map(function(x) summary(dataset[dataset[var] < x & dataset['X2'] > 0,
-# #       'reciprocity'])[[3]], ws)), type='l', ylab='R', xlab='t')
-# # }
-# #
-# #
-# #
-#
 
 MakeBoxPlots <- function(data,
                          suffix = '',
@@ -586,13 +572,8 @@ MakeScatterPlots <- function(dataset) {
   
   MakeLegend()
  
-  #par(oma=c(0,1,1,0), mar=c(4,0,0,0), fig=c(0.15,0.55,0.6,1),new=T)
-#   barplot(sort(tmp3*100,decreasing=T),xaxt="n", yaxs="i", ylab="% of total grooming duration",width=1,xlab="Dyad",
-#           col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
-#           space=0,border=NA)
-#   legend("topright",c("Top 5%","Bottom 95%"),col=c(3,4),,lwd=10)
-
   par(fig=c(0,1,0,1),new=F)
+  
   ### Selected Dyads
   idx1 <- dataset$X2>=0
   idx2 <- dataset$X2<0
@@ -626,12 +607,6 @@ MakeScatterPlots <- function(dataset) {
   abline(0, 1, col=1, lty=3)
   
   MakeLegend()
-  #legend("topright",c("All","Top 5%","Bottom 95%"),col=c(2,3,4),pch=c(NA,1,4),lwd=1)
-
-#   par(fig=c(0.15,0.65,0.6,1),new=T)
-#   barplot(sort(tmp3,decreasing=T),xaxt="n", ylab="% of Grooming",width=1,#xlab="Dyad ID"
-#           col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
-#           space=0,border=NA)
 
   ### 
 
@@ -668,12 +643,8 @@ MakeScatterPlots <- function(dataset) {
   abline(0, 1, col=1, lty=3)
   
   MakeLegend()
-#   legend("topright",c("All","Top 5%","Bottom 95%"),col=c(2,3,4),pch=c(NA,1,4),lwd=1)
 
   par(fig=c(0.15,0.65,0.6,1), new=T)
-#   barplot(sort(tmp3,decreasing=T),xaxt="n", ylab="% of Grooming",width=1,#xlab="Dyad ID"
-#           col=c(rep(3,length(whi_dyads)),rep(4,length(tmp3)-length(whi_dyads))),
-#           space=0,border=NA)
 
   par(fig=c(0,1,0,1), new=F)
   plot(dataset$X1, dataset$Y, xlab=expression(X), ylab="Y",type="n", asp=1,
@@ -686,8 +657,6 @@ MakeScatterPlots <- function(dataset) {
   points(dataset$X1[idx2], dataset$Y[idx2], col=4, pch=4)
   legend("topleft",c("All",expression(Delta >= 0), expression(Delta < 0), "Y=X"),
             col=c(1, 3, 4, 1), lwd=1, pch=c(NA, 1, 4, NA), lty=c(1, 1, 1, 3))
-  # par(fig=c(0,0.5,0.5,1),new=T)
-  # pie(c(sum(idx1),sum(idx2)),col=3:4,labels="",radius=0.5)
 
   dev.off()
 
@@ -714,11 +683,6 @@ MakeScatterPlots <- function(dataset) {
   for(j in 1:length(delta_t)){
     for(i in 1:length(tgrid)){
       idx <- which(Z2[,3]>(tgrid[i]-delta_t[j]) & Z2[,3]<=(tgrid[i]+delta_t[j]))
-  #    if(tgrid[i]<=0){
-  #      idx <- which(Z2[,3]>(tgrid[i]-delta_t[j]) & Z2[,3]<=(tgrid[i]))
-  #    }else{
-  #      idx <- which(Z2[,3]>(tgrid[i]) & Z2[,3]<=(tgrid[i]+delta_t[j]))
-  #   }
       cors[i,j] <- cor(Z2[idx,1:2])[1,2]
       cor.lci[i,j] <- cor.test(Z2[idx,1],Z2[idx,2])$conf.int[1]
       cor.uci[i,j] <- cor.test(Z2[idx,1],Z2[idx,2])$conf.int[2]
@@ -753,25 +717,6 @@ MakeScatterPlots <- function(dataset) {
     }
   }
 
-  #x11()
-  #par(mfrow=c(2,1))
-  #par(mar=c(4.25,4.25,1,1))
-
-  #hist(X2/60,50,xlim=c(-30,30),xlab=expression(X[2]~"[mins.]"),main="")
-  #matplot(tgrid,regs,xlab="X2 [mins.]",ylab=expression(beta),type="l",xlim=c(-30,30))#,ylim=c(-1,1))
-  #abline(v=0,col=8)
-  #matplot(tgrid,rsquared1,xlab="X2 [mins.]",ylab=expression(R^{2}),type="l",xlim=c(-30,30),ylim=c(0,0.6))
-  #abline(v=0,col=8)
-  #legend("topright",paste(delta_t," min,"),title="Window Width",lwd=1,col=1:4,lty=1:4)
-
-  #plot(tgrid,cors[,1],xlab=expression(X[2]~"[mins.]"),
-  #     ylab=expression("Corr((Y,"~X[1]~")|"~X[2]~")"),type="l",ylim=c(0,0.8))
-  #lines(tgrid,cor.uci[,1],col=2,lty=2)
-  #lines(tgrid,cor.lci[,1],col=2,lty=2)
-
-  #library("Hmisc")
-  #errbar(tgrid,cors[,1],cor.uci[,1],cor.lci[,1], add=T, pch=1, cap=.1)
-
   par(mfrow=c(1,1))
   par(mar=c(4.25,4.25,1,1))
 
@@ -791,18 +736,13 @@ MakeScatterPlots <- function(dataset) {
                       expression(beta~"(Bottom 95%)"),"95% C.I. (Bottom 95%)"),
         col=c(2,2,4,4),lwd=c(2,1,2,1),lty=c(1,2,1,2))
 
-  #x11()
   plot(tgrid,rsquared1[,1],ylim=c(0,1),col=2,type="l",ylab=expression(R^{2}),xlab=expression(Delta~"[mins.]"))
   lines(tgrid,rsquared2[,1],col=4,lty=1)
   legend("topright",c(expression(R^{2}~"(All)"),
                       expression(R^{2}~"(Bottom 95%)")),
         col=c(2,4),lwd=1,lty=1)
 
-  #x11()
-  #plot(Z2[idx,2],Z2[idx,1])
-
   dev.off()
-
 }
 
 
@@ -832,16 +772,7 @@ MakeCountBarPlot <- function(dataset) {
 
 
 NullModel <- function(dataset) {
-# 
-#   mean.duration.by.chimp <- with(dataset, aggregate(dur.1 ~ X1.1, FUN=mean))
-#   
-#   MeanDurationForChimp <- function(i) 
-#     mean.duration.by.chimp[mean.duration.by.chimp$X1.1 == i,]$dur.1
-#   
-#   mean.dur.1 <- sapply(dataset$X1.1, MeanDurationForChimp)
-#   mean.dur.2 <- sapply(dataset$X1.2, MeanDurationForChimp)
-  
-  #RandomDuration <- function(mean_duration) runif(1, min=0, max=2*mean_duration)
+
   RandomDuration <- function(chimp) {
     durations <- dataset[dataset$X1.1 == chimp, 'dur.1']
     if (length(durations) > 0) {
@@ -860,18 +791,17 @@ NullModel <- function(dataset) {
 
 
 BootstrapNullModel <- function(dataset, n=100) {
-  results <- c()
-  for(i in 1:n) {
-    results <- 
-      rbind(results, 
-              aggregate(reciprocity ~ ws + treatment,
-                WindowData(NullModel(dataset)), FUN=median))
-  }
-  return(results)
+   Reduce(rbind, Map(
+             function(i)
+                aggregate(reciprocity ~ ws + treatment,
+                    WindowData(NullModel(dataset)), FUN=median),
+   1:n))
 }
 
 
-NullModelCriticalValues <- function(bootstrap.results, var, p=0.05) {
+NullModelCriticalValues <- function(bootstrap.results, 
+                                        var='reciprocity',
+                                            p=0.05) {
 
   CriticalValues <- function(probability) {
      df <- aggregate(as.formula(paste(var,'~ ws + treatment')), 
