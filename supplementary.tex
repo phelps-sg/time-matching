@@ -1,0 +1,251 @@
+%%This is a very basic article template.
+%%There is just one section and two subsections.
+\RequirePackage{lineno} 
+\documentclass[12pt]{article}
+%\usepackage[inner=2cm,outer=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{subfigure}
+\usepackage{verbatim}
+\usepackage{xspace}
+\usepackage{amscd}
+\usepackage{rotating}
+\usepackage{latexsym}
+\usepackage{multicol}
+\usepackage{array}
+\usepackage{algorithm}
+\usepackage{subfigure}
+\usepackage[numbers,sort&compress]{natbib} 
+%\usepackage{apacite}
+\usepackage{url}
+\usepackage{times}
+\usepackage{setspace}
+
+\usepackage{endnotes}
+\let\footnote=\endnote
+
+\topmargin 0.0cm
+\oddsidemargin 0.2cm
+\textwidth 16cm 
+\textheight 21cm
+\footskip 1.0cm
+
+\begin{document}
+
+\linenumbers
+
+\baselineskip24pt
+
+\author{%%%% Author details
+Steve Phelps$^{1}$, Wing Lon Ng$^{2}$, Mirco Musolesi$^{3}$ and Yvan I. Russell$^{4,5}$\\
+%%%%%%%%% Insert author address here
+\normalsize{$^{1}$Department of Informatics, King's College London, UK.}\\
+\normalsize{$^{2}$Bounded-Rationality Advancement in Computational Intelligence Laboratory, UK.}\\
+\normalsize{$^{3}$Department of Geography, University College London, UK.}\\
+\normalsize{$^{4}$Department of Psychology, Middlesex University, UK.} \\
+\normalsize{$^{5}$CRC Evolution of Social Behaviour, University of G\"{o}ttingen, Germany.}
+}
+% 
+% %%%% Subject entries to be placed here %%%%
+% \subject{Behaviour (Biology), Psychology (Biology)}
+% 
+% %%%% Keyword entries to be placed here %%%%
+% \keywords{Chimpanzees, Allogrooming, Reciprocity, Time matching}
+% 
+% %%%% Insert corresponding author and its email address}
+% \corres{Steve Phelps\\
+% \email{steve.phelps@kcl.ac.uk}}
+% 
+\title{Supplementary material for ``
+Precise time-matching in chimpanzee allogrooming does not occur after a short delay''}
+
+\section{Alternative event-pairing results}
+
+Our event-pairing procedure pairs events together within a dyad whenever the 
+direction of grooming changes, and we pair together the most recent event before 
+the direction change.  During the review process, Michio Nakamura correctly 
+pointed out that this is an arbitrary decision, and that we could equally well 
+have chosen, e.g. the earliest event in the same direction.  In light of this comment,
+we reran our analysis with this alternative pairing procedure.  The results
+are presented are below, using plots in an identical format to the original 
+manuscript.  As can be seen, the alternative pairing procedure does not
+alter our conclusion that time-matching does not occur after a delay.
+
+\begin{figure*}
+ \begin{center}
+  \includegraphics[scale=0.8]{figs/earliest-pairing/delay-histogram-crop.pdf}
+  \caption{Histogram of $\Delta$ measured in 
+minutes.\label{fig:delay-histogram}}
+ \end{center}
+\end{figure*}
+
+\begin{figure*}
+ \begin{center}
+  \includegraphics[scale=0.55]{figs/earliest-pairing/reciprocity-by-treatment-crop.pdf}
+  \caption{Box plots for the reciprocity measure $\rho  = |X-Y|/(X+Y)$ by 
+comparison condition. Delayed grooming $\Delta \geq 0$ is shown on the left 
+($n=555$), and within-bout grooming $\Delta < 0$ on the right ($n=277$).
+  \label{fig:boxplots-by-condition}}
+ \end{center}
+\end{figure*}
+
+
+\begin{figure*}
+%   \begin{center}
+    \subfigure[Reciprocity by chimpanzee - $\Delta < 0$]{
+      \includegraphics[scale=0.46]{figs/earliest-pairing/abs-reciprocity-by-chimp-immediate-crop.pdf}
+      \label{fig:abs-reciprocity-by-chimp:immediate}
+    }
+    \subfigure[Reciprocity by chimpanzee - $\Delta \geq 0$]{
+      \includegraphics[scale=0.46]{figs/earliest-pairing/abs-reciprocity-by-chimp-delayed-crop.pdf}
+      \label{fig:abs-reciprocity-by-chimp:delayed}
+    } \\
+    \centering
+    \subfigure[Number of paired events by chimpanzee]{
+      \includegraphics[scale=0.35]{figs/earliest-pairing/counts-bar-plot.pdf}
+      \label{fig:counts-bar-plot}
+    }
+  \caption{Box plots for the reciprocity measure $\rho = |X-Y|/(X+Y)$ grouped by individuals.  
+  Figure~a) above is restricted to within-bout grooming --- i.e. $\Delta < 0$ ---
+  whereas b) below illustrates the delayed case $\Delta \geq 0$.  The corresponding
+  sample sizes are summarised underneath in c).}.
+  \label{fig:abs-reciprocity-by-chimp}
+\end{figure*}
+
+\begin{figure*}
+  \begin{center}
+    \subfigure[Reciprocity by dyad - $\Delta < 0$]{
+      \includegraphics[scale=0.6]{figs/earliest-pairing/reciprocity-by-dyad-immediate-crop.pdf}
+      \label{fig:reciprocity-by-dyad:immediate}
+    }
+    \subfigure[Reciprocity by dyad - $\Delta \geq 0$]{
+      \includegraphics[scale=0.6]{figs/earliest-pairing/reciprocity-by-dyad-delayed-crop.pdf}
+      \label{fig:reciprocity-by-dyad:delayed}
+    }
+  \end{center}
+  \caption{Box plots for the reciprocity measure $\rho$ grouped by dyad.  
+  Figure a) above is restricted to within-bout grooming --- i.e. $\Delta < 0$ ---
+  whereas b) below illustrates the delayed case $\Delta \geq 0$.}
+  \label{fig:reciprocity-by-dyad}
+\end{figure*}
+
+
+
+\begin{figure*}
+\begin{center}
+\subfigure[Time-matching (all)]{  \label{fig:regression:all}
+\includegraphics[scale=0.43]{figs/earliest-pairing/pg_0001.pdf} 
+}
+\subfigure[Time-matching by $\Delta$]{
+  \includegraphics[scale=0.43]{figs/earliest-pairing/pg_0004.pdf} 
+  \label{fig:regression:by_X2}
+}
+\\
+\subfigure[Within-bout time-matching $\Delta < 0$]{
+  \includegraphics[scale=0.43]{figs/earliest-pairing/pg_0003.pdf}
+  \label{fig:regression:within_bout}
+}
+\subfigure[Delayed time-matching $\Delta \geq 0$]{
+  \includegraphics[scale=0.43]{figs/earliest-pairing/pg_0002.pdf}
+  \label{fig:regression:delayed}
+}
+\end{center}
+
+\caption{Longitudinal time-matching in minutes, showing: overall time-matching
+(top-left), color-coded according to delay (top-right),  
+within-bout only (bottom-left) and delayed only 
+(bottom-right).
+Each point on the scatter-plots below represents a pair of grooming events for 
+a single dyad $\{A, B\}$.  The x-axis represents the number of minutes that $A$ 
+spent grooming $B$, and the y-axis represents the time invested by $B$ in 
+grooming $A$. \label{fig:regression}
+}
+
+
+% In order to detect possible over-representation, the inset 
+% bar-charts show the proportion of total time recorded from each dyad.   The plots in the 
+% upper-half of the panel show the entire dataset; in the top-left panel each 
+% pair of events is  color-coded according to the dyad's frequency in the dataset, 
+% whereas in the top-right the same data are color-coded according to the delay 
+% in reciprocation $\Delta$.  The bottom panels separate the data-set according to the 
+% delay $\Delta$; in the bottom-left we show within-bout time-matching ($\Delta < 0$), 
+% whereas in the bottom-right we show delayed time-matching ($\Delta \geq 0$).  
+%}
+\end{figure*}
+
+\begin{figure*}
+ \begin{center}
+  \includegraphics{figs/earliest-pairing/grooming-distribution-crop.pdf}
+ \end{center}
+ \caption{Distribution of total grooming duration over dyads.  The dyads in the 
+top five percentiles ($\{AL, WH\}$,
+$\{ BO , RO\} $,
+$\{ DL , SA\} $,
+$\{ HI , HP\} $,
+$\{ KI , SR\} $,
+$\{ KK , NI\} $,
+$\{ KY , SA\} $,
+$\{ SA , WI\} $) are highlighted in red.\label{fig:grooming-distribution}}
+\end{figure*}
+
+\begin{figure*}
+  \begin{center}
+    \subfigure[Null model ($\bar{R^2} = 0.07)$]{
+      \includegraphics[scale=0.39]{figs/earliest-pairing/null-model-scatter-plot-crop.pdf}
+      \label{fig:windowed:null}
+    }
+    \subfigure[Entire dataset ($\bar{R^2} = 0.55$)]{
+      \includegraphics[scale=0.39]{figs/earliest-pairing/windowed-scatter-plot-all-crop.pdf}
+      \label{fig:windowed:all}
+    } \\
+    \subfigure[Within-bout $\Delta < 0$ ($\bar{R^2} = 0.79$)]{
+      \includegraphics[scale=0.39]{figs/earliest-pairing/windowed-scatter-plot-immediate-crop.pdf}
+      \label{fig:windowed:immediate}
+    } 
+    \subfigure[Delayed $\Delta \geq 0$ ($\bar{R^2} = 0.08$)]{
+      \includegraphics[scale=0.39]{figs/earliest-pairing/windowed-scatter-plot-delayed-crop.pdf}
+      \label{fig:windowed:delayed}
+    }   
+  \end{center}
+  \caption{Windowed time-matching.  The above plots illustrate 
+time-matching when grooming durations are summed over time windows of 20 
+minutes, 40 minutes, 1 hour and 4 hours.  The $\bar{R^2}$ values in parentheses in the caption beneath each figure shows the average of the $R^2$ values over each regression within the comparison group. Plot (a) shows windowed time-matching
+of a null model in which grooming durations for each animal are independent and 
+identically-distributed random variables.  Plot (b) shows
+the empirical summed durations without distinguishing between within-bout or extra-bout
+reciprocation.  When we separate the data according to the delay $\Delta$ we 
+see that most of this time-matching is accounted for by within-bout activity (c).
+When we restrict attention to delayed time-matching, the effect
+largely disappears (d).\label{fig:windowed}}
+\end{figure*}
+
+\section{Reciprocity over different delay periods}
+
+Michio Nakamura also suggested that although reciprocity might not occur after a 
+very long delay due to memory decay, if we restrict attention to shorter delays 
+then we might find evidence of time-matching.  We examined this question in a 
+previous version of the manuscript, and we present the results here.  We used a 
+20-minute moving time-window over $\Delta$, and perform time-matching regressions on data within the data, showing the regression slope (Figure~\ref{fig:windowed-regression-slope}) and fit (Figure~\ref{fig:windowed-regression-r-squared}). 
+As can be seen, there is no evidence of time-matching once the window excludes
+data from $\Delta \leq 0$.
+
+
+\begin{figure}[h]
+ \includegraphics[scale=0.8]{figs/windowed-regressions/pg_0002.pdf}
+ \caption{Time-matching regression results for a 20 minute moving window of
+ $\Delta$ showing slope and associate confidence intervals as the delay
+ changes.  Results are not statistically significant once the window
+ moves beyond the 0-20 minute period. \label{fig:windowed-regression-slope}}
+\end{figure}
+
+\begin{figure}[h]
+ \includegraphics[scale=0.8]{figs/windowed-regressions/pg_0003.pdf}
+ \caption{Time-matching regression results for a 20 minute moving window of
+ $\Delta$ showing $R^2$.  The fit becomes very poor once
+ the window moves beyond the 0-20 minute period. \label{fig:windowed-regression-r-squared}}
+\end{figure}
+
+
+\end{document}
+

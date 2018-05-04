@@ -182,7 +182,7 @@ for (i in 1:nschedules) {
 
 # Up till this point d2 contains single events with nornalised times
 
-JoinEvents <- function(d2, pair.immediate=TRUE) {
+JoinEvents <- function(d2, pair.immediate=FALSE) {
   # Pair subsequent events from the same dyad and same session into a single row
   # so that the final result is a data-frame containing rows of dy-events.
   now1 <- Sys.time()
@@ -376,7 +376,7 @@ MakeBoxPlots <- function(data,
     } else {
       fname.suffix = ''
     }
-    return(paste0('../../figs/', name, fname.suffix, '.pdf'))
+    return(paste0(figsdir, name, fname.suffix, '.pdf'))
   }
   
   Title <- function(main) {
@@ -442,7 +442,7 @@ WindowData <- function(dataset, window.sizes=c(20, 40, 60, 240) * 60) {
 }
 
 
-MakeWindowedScatterPlots <- function(dataset, fname='windowed-scatter-plots') {
+MakeWindowedScatterPlots <- function(dataset, fname='windowed-scatter-plot') {
 
   window.sizes <- c(20, 40, 60, 240) * 60
   treatments <- c('all', 'immediate', 'delayed')
@@ -875,9 +875,8 @@ NullModelCriticalValues <- function(bootstrap.results, var, p=0.05) {
 
   CriticalValues <- function(probability) {
      df <- aggregate(as.formula(paste(var,'~ ws + treatment')), 
-            bootstrap.results, 
-            FUN=function(x) quantile(x, p=probability))
-     names(df)[3] <- sprintf('%s.%f', var, probability)
+                      bootstrap.results, 
+                        FUN=function(x) quantile(x, p=probability))
      df
   }
   
