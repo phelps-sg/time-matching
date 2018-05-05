@@ -182,7 +182,7 @@ for (i in 1:nschedules) {
 
 # Up till this point d2 contains single events with nornalised times
 
-JoinEvents <- function(d2, pair.immediate=FALSE) {
+JoinEvents <- function(d2, pair.immediate=TRUE) {
   # Pair subsequent events from the same dyad and same session into a single row
   # so that the final result is a data-frame containing rows of dy-events.
   now1 <- Sys.time()
@@ -352,20 +352,17 @@ CumulativeReciprocityByDelay <- function(dataset, ws) {
   ))
 }
 
-# res <- ReciprocityByDelay(dataset, 2400)
-# with(res[res$treatment == 'all',], plot(X1, Y))
-# with(res[res$treatment == 'immediate',], plot(X1, Y))
-#
-# # ws <- 1:60 * 10
-# #
-# # WindowedPlot <- function(dataset, var) {
-# #   plot(ws, unlist(Map(function(x) summary(dataset[dataset[var] < x & dataset['X2'] > 0,
-# #       'reciprocity'])[[3]], ws)), type='l', ylab='R', xlab='t')
-# # }
-# #
-# #
-# #
-#
+
+ReciprocityByChimp <- function(data) {
+  
+  A <- data[, c('X1.1', 'reciprocity')]
+  B <- data[, c('X1.2', 'reciprocity')]
+  names(A) <- c('chimpanzee', 'reciprocity')
+  names(B) <- names(A)
+ 
+  return(rbind(A, B))
+}
+
 
 MakeBoxPlots <- function(data,
                          suffix = '',
@@ -414,12 +411,19 @@ MakeBoxPlots <- function(data,
     Plot(reciprocity ~ dyad,
          'reciprocity-by-dyad',
          'Reciprocity by dyad')
+         })
+  
+  A <- data[, c('X1.1', 'reciprocity')]
+  B <- data[, c('X1.2', 'reciprocity')]
+  names(A) <- c('chimpanzee', 'reciprocity')
+  names(B) <- names(A)
+  
+  with(ReciprocityByChimp(data))
     Plot(
-      reciprocity ~ unlist(dyads[dyad, 1]),
+      reciprocity ~ chimpanzee,
       'abs-reciprocity-by-chimp',
       'Reciprocity by individual'
     )
-  })
   
 }
 
@@ -815,10 +819,9 @@ MakeDeltaVersusRho <- function() {
 MakeCountBarPlot <- function(dataset) {
 
   DF <- function(dataset, condition) {
-    chimp <- unlist(dyads[dataset$dyad, 1])
-    counts <- count(chimp)
+    counts <- aggregate(reciprocity ~ chimpanzee, ReciprocityByChimp(dataset), FUN=length)
     n <- nrow(counts)
-    data.frame(x=counts$x, y=counts$freq, condition=rep(condition, n))
+    data.frame(x=counts$chimpanzee, y=counts$reciprocity, condition=rep(condition, n))
   }
   
   df <- rbind(DF(dataset[dataset$X2 < 0,], 'within.bout'), DF(dataset[dataset$X2 >= 0,], 'delayed'))
