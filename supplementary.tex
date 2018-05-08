@@ -57,20 +57,23 @@ Steve Phelps$^{1}$, Wing Lon Ng$^{2}$, Mirco Musolesi$^{3}$ and Yvan I. Russell$
 % \corres{Steve Phelps\\
 % \email{steve.phelps@kcl.ac.uk}}
 % 
-\title{Supplementary material for ``
-Precise time-matching in chimpanzee allogrooming does not occur after a short delay''}
+\title{Supplementary material for ``Precise time-matching in chimpanzee allogrooming does not occur after a short delay''}
+
+\maketitle
 
 \section{Alternative event-pairing results}
 
 Our event-pairing procedure pairs events together within a dyad whenever the 
-direction of grooming changes, and we pair together the most recent event before 
-the direction change.  During the review process, Michio Nakamura correctly 
-pointed out that this is an arbitrary decision, and that we could equally well 
-have chosen, e.g. the earliest event in the same direction.  In light of this comment,
-we reran our analysis with this alternative pairing procedure.  The results
-are presented are below, using plots in an identical format to the original 
-manuscript.  As can be seen, the alternative pairing procedure does not
-alter our conclusion that time-matching does not occur after a delay.
+direction of grooming changes, and in the manuscript we pair together the most 
+recent event before the direction change.  During the review process, Michio 
+Nakamura correctly pointed out that this is an arbitrary decision, and that we 
+could equally well have chosen, e.g. the earliest event in the same direction.  
+In light of this comment, we reran our analysis with this alternative pairing 
+procedure.  The results are presented below using plots in an identical format 
+to the original manuscript, and the windowed time-matching results are 
+summarised in Table~\ref{table:bootstrap}.  As can be seen, the alternative 
+pairing procedure does not alter our conclusion that time-matching does not 
+occur after a delay.
 
 \begin{figure*}
  \begin{center}
@@ -220,6 +223,33 @@ When we restrict attention to delayed time-matching, the effect
 largely disappears (d).\label{fig:windowed}}
 \end{figure*}
 
+\begin{table}
+\centering
+\begin{tabular}{rrrll}
+  \hline
+ Window size (minutes) & Comparison group &  $\widetilde{P}$ & lower $P_{crit}$ & upper $P_{crit}$  \\
+  \hline
+20 & \textbf{delayed} & 0.53 & (0.46) & (0.60) \\ 
+40 & \textbf{delayed} & 0.45 & (0.45) & (0.59) \\
+60 & \textbf{delayed} & 0.49 & (0.45) & (0.59) \\
+240 & \textbf{delayed} & 0.46 & (0.44) & (0.58) \\
+\hline
+20 & \textbf{within-bout} & 0.00 & (0.45) & (0.56) \\ 
+40 & \textbf{within-bout} & 0.00 & (0.43) & (0.55) \\ 
+60 & \textbf{within-bout} & 0.00 & (0.43) & (0.55) \\
+240 & \textbf{within-bout} & 0.00 & (0.42) & (0.54) \\
+   \hline
+\end{tabular}
+\caption{Median of the windowed reciprocity metric $P$ computed across all 
+window-dyads.  This is  compared against 95\% lower and upper critical values 
+obtained by bootstrapping from a null model in which grooming durations are 
+independently and identically randomly-distributed for each individual.  Lower 
+values of $P$ indicate superior time-matching when grooming durations are summed 
+over the time windows of the specified duration.  We used $10^5$ bootstrap replications. All 
+results for the within-bout comparison group are significant at $p<0.05$,
+however we are unable to reject the null hypothesis for delayed grooming. \label{table:bootstrap}}
+\end{table}
+
 \section{Reciprocity over different delay periods}
 
 Michio Nakamura also suggested that although reciprocity might not occur after a 
@@ -232,7 +262,7 @@ data from $\Delta \leq 0$.
 
 
 \begin{figure}[h]
- \includegraphics[scale=0.8]{figs/windowed-regressions/pg_0002.pdf}
+ \includegraphics[scale=0.6]{figs/windowed-regressions/pg_0002.pdf}
  \caption{Time-matching regression results for a 20 minute moving window of
  $\Delta$ showing slope and associate confidence intervals as the delay
  changes.  Results are not statistically significant once the window
@@ -240,7 +270,7 @@ data from $\Delta \leq 0$.
 \end{figure}
 
 \begin{figure}[h]
- \includegraphics[scale=0.8]{figs/windowed-regressions/pg_0003.pdf}
+ \includegraphics[scale=0.6]{figs/windowed-regressions/pg_0003.pdf}
  \caption{Time-matching regression results for a 20 minute moving window of
  $\Delta$ showing $R^2$.  The fit becomes very poor once
  the window moves beyond the 0-20 minute period. \label{fig:windowed-regression-r-squared}}

@@ -411,12 +411,12 @@ MakeBoxPlots <- function(data,
          'Reciprocity by dyad')
          })
   
-  with(ReciprocityByChimp(data))
+  with(ReciprocityByChimp(data),
     Plot(
       reciprocity ~ chimpanzee,
       'abs-reciprocity-by-chimp',
       'Reciprocity by individual'
-    )
+    ))
   
 }
 
