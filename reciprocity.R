@@ -18,6 +18,7 @@ library(sets)
 library(lme4)
 library(ggplot2)
 library(plyr)
+library(ez)
 
 datadir <- "../../data/"
 figsdir <- "../../figs/"
@@ -310,6 +311,7 @@ dataset$dyad <-
   })
 dataset$comovement <- sapply(dataset$dyad, Comovement)
 
+
 Reciprocity <- function(dataset) {
   with(dataset, {
     abs(Y - X1) / (X1 + Y)
@@ -319,6 +321,11 @@ Reciprocity <- function(dataset) {
 dataset$reciprocity = Reciprocity(dataset)
 
 
+dataset$group <- rep(NaN, nrow(dataset))
+dataset[dataset$X2 < 0,]$group = 'within.bout'
+dataset[dataset$X2 >= 0,]$group = 'delayed'
+ 
+ 
 CumulativeReciprocity <- function(dataset, ws, treatment = 'all') {
   dataset$window <- floor(dataset$t1.1 / ws)
   SY <-
@@ -332,6 +339,7 @@ CumulativeReciprocity <- function(dataset, ws, treatment = 'all') {
   result$ws <- replicate(nrow(result), ws)
   return(result)
 }
+
 
 CumulativeReciprocityByDelay <- function(dataset, ws) {
   reciprocity.all <- CumulativeReciprocity(dataset, ws, 'all')
@@ -352,6 +360,13 @@ CumulativeReciprocityByDelay <- function(dataset, ws) {
   ))
 }
 
+
+ConfIntervalsMedianReciprocity <- function(dataset) {
+  ci <- 
+    aggregate(reciprocity ~ X1.1, dataset[dataset$group == 'within.bout',], FUN=function(x) quantile(apply(matrix(sample(x, rep=TRUE, 10^4), nrow=10^4), 1, median), c(0.025, 0.975)))
+}
+
+
 ReciprocityByChimp <- function(data) {
   
   A <- data[, c('X1.1', 'reciprocity')]
@@ -362,15 +377,18 @@ ReciprocityByChimp <- function(data) {
   return(rbind(A, B))
 }
 
+
 MakeBoxPlots <- function(data,
                          suffix = '',
                          color = 'blue') {
-  FName <- function(name) {
+                         
+  FName <- function(name, notched=F) {
     if (suffix != '') {
       fname.suffix = paste0('-', suffix)
     } else {
       fname.suffix = ''
     }
+    if (notched) fname.suffix <- paste0(fname.suffix, '-notched')
     return(paste0(figsdir, name, fname.suffix, '.pdf'))
   }
   
@@ -383,12 +401,24 @@ MakeBoxPlots <- function(data,
     return('')
   }
   
-  Plot <- function(formula, fname, title, label = expression('Reciprocity (' ~ rho ~ ')')) {
+  Plot <- function(var, frm, fname, title, label = expression('Reciprocity (' ~ rho ~ ')')) {
+  
+    ci <- 
+      aggregate(frm, data, 
+        FUN=function(x) 
+              quantile(apply(matrix(
+                sample(x, rep=TRUE, 10^4*length(x)), nrow=10^4), 1, median), 
+                  c(0.025, 0.975)))    
+                  
+    df.all <- data.frame(levels(as.factor(data[, var])))
+    names(df.all) <- var
+    ci <- merge(df.all, ci, all.x=T)
+                  
     pdf(FName(fname))
-    #par(mar=c(0, 0, 0, 0))
-    boxplot(
-      formula,
+    stats <- boxplot(
+      frm,
       outline = F,
+      notch = F,
       yaxp = c(0, 1, 10),
       cex.axis = 0.5,
       main = Title(title),
@@ -397,22 +427,30 @@ MakeBoxPlots <- function(data,
     )
     abline(a = 0., b = 0.)
     dev.off()
+    
+    stats$conf <- t(as.matrix(ci[,2]))
+    
+    pdf(FName(fname, notch=T))
+    bxp(stats, outline=F, notch=T, yaxp = c(0, 1, 10), cex.axis=0.5, main=Title(title), 
+    ylab=label, boxfill=color)
+    dev.off()
   }
   
   with(data, {
-    Plot(reciprocity ~ X1.1,
+    Plot('X1.1', reciprocity ~ X1.1,
          'reciprocity-by-initiator',
          'Reciprocity by initiator')
-    Plot(reciprocity ~ X1.2,
+    Plot('X1.2', reciprocity ~ X1.2,
          'reciprocity-by-recipricator',
          'Reciprocity by reciprocator')
-    Plot(reciprocity ~ dyad,
+    Plot('dyad', reciprocity ~ dyad,
          'reciprocity-by-dyad',
          'Reciprocity by dyad')
          })
   
-  with(ReciprocityByChimp(data),
-    Plot(
+  data <- ReciprocityByChimp(data)
+  with(data,
+    Plot('chimpanzee',
       reciprocity ~ chimpanzee,
       'abs-reciprocity-by-chimp',
       'Reciprocity by individual'
@@ -814,10 +852,9 @@ NullModelCriticalValues <- function(bootstrap.results,
                                             p=0.05) {
 
   CriticalValues <- function(probability) {
-     df <- aggregate(as.formula(paste(var,'~ ws + treatment')), 
+     aggregate(as.formula(paste(var,'~ ws + treatment')), 
                       bootstrap.results, 
                         FUN=function(x) quantile(x, p=probability))
-     df
   }
   
   lower <- CriticalValues(p/2.)
@@ -831,24 +868,58 @@ NullModelCriticalValues <- function(bootstrap.results,
 }
 
 
-MakePDFs <- function(threshold = 0) {
-  immediate <<- dataset[dataset$X2 < threshold,]
-  delayed <<- dataset[dataset$X2 >= threshold,]
-  MakeBoxPlots(dataset, color = 'gray')
-  MakeBoxPlots(immediate, 'immediate', color = 'blue')
-  MakeBoxPlots(delayed, 'delayed', color = 'green')
+WithinSubjectsANOVA <- function(dataset) {
+  immediate <- dataset[dataset$X2 < threshold,]
+  delayed <- dataset[dataset$X2 >= threshold,]
+  immediate$treatment <- 'immediate'
+  delayed$treatment <- 'delayed'
+  ds <- rbind(immediate, delayed)
+  dyad.ids <- as.numeric(levels(as.factor(ds$dyad)))
+  delayed.n <- 
+    sapply(dyad.ids, function(i) nrow(delayed[delayed$dyad == i,]))
+  immediate.n <- 
+    sapply(dyad.ids, function(i) nrow(immediate[immediate$dyad == i,]))
+  bad.dyads <- dyad.ids[c(which(delayed.n == 0), which(immediate.n == 0))]
+  ezANOVA(ds[!(ds$dyad %in% bad.dyads),], 
+            dv = .(reciprocity),
+            wid = .(dyad),
+            within = .(treatment))
+}
+
+
+EffectSizes <- function(dataset) {
+  with(dataset, {
   
-  immediate$treatment <<- 'immediate'
-  delayed$treatment <<- 'delayed'
+    raw.mean.difference <- 
+      abs(diff(as.vector(
+        aggregate(reciprocity ~ group, dataset, mean)$reciprocity)))
+        
+    sub.means <- as.data.frame(tapply(reciprocity, list(dyad, group), mean))
+    sub.means <- 
+      sub.means[!(is.na(sub.means$delayed) | is.na(sub.means$within.bout)), ]
+      
+    sigma <- sqrt(mean(diag(var(as.matrix(sub.means)))))
+    
+    return(list(raw.mean.difference=raw.mean.difference, d=raw.mean.difference/sigma))
+  })
+  
+}
+
+
+MakePDFs <- function(threshold = 0) {
+
+  MakeBoxPlots(dataset, color = 'gray')
+  MakeBoxPlots(dataset[dataset$group=='within.bout',] , 'immediate', color = 'blue')
+  MakeBoxPlots(dataset[dataset$group=='delayed', ], 'delayed', color = 'green')
   
   pdf(paste0(figsdir, 'reciprocity-by-treatment.pdf'))
-  with(
-    rbind(immediate, delayed),
+  with(dataset,
     boxplot(
-      reciprocity ~ treatment,
+      reciprocity ~ group,
       outline = F,
       col = c('green', 'blue'),
       yaxp = c(0, 1, 10),
+      notch = F,
       ylab = expression('Reciprocity (' ~ rho ~ ')'),
       names = c(as.expression(substitute(
         Delta >= T, list(T = threshold)
@@ -861,9 +932,6 @@ MakePDFs <- function(threshold = 0) {
   abline(a = 0.0, b = 0.)
   dev.off()
   
-  dataset$group <- rep(NaN, nrow(dataset))
-  dataset[dataset$X2 < 0,]$group = 'within.bout'
-  dataset[dataset$X2 >= 0,]$group = 'delayed'
   ggplot(dataset, aes(x=X2/60, group=group, fill=group)) + 
     geom_histogram(closed='left', breaks=seq(-44, 266, by=44/10)) +
     scale_fill_manual(values=group.colours) +
